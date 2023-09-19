@@ -1,0 +1,3 @@
+{
+    "url": "{{ if eq (.Req.Header.Get "X-Forwarded-Proto") "https"}}https{{else}}http{{end}}://{{placeholder "http.request.hostport" }}/{{placeholder "http.upload.uuiddir"}}/{{placeholder "http.upload.filename"}}"
+}

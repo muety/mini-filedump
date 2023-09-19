@@ -1,0 +1,56 @@
+{
+	order upload before file_server
+	order jwtauth before basicauth
+}
+
+http://localhost:8000 {
+	root * .
+	templates / {
+		mime application/json
+	}
+
+	# e.g. set to `.+\.(png|jpg|webp|pdf)$`
+	@files {
+		path_regexp {$FILE_TYPE_REGEX}
+		method GET
+	}
+
+	@upload {
+		path /
+		method POST
+	}
+
+	handle @files {
+		file_server @files {
+			root ./uploads/
+		}
+	}
+
+	handle @upload {
+		jwtauth @upload {
+			# base64 encoded 32 bytes string
+			sign_key {$AUTH_SIGN_KEY}
+
+			from_query token
+			from_header X-Token
+			from_cookies user_session
+			
+			# can be left blank to allow any "iss" claim value
+			issuer_whitelist {$AUTH_ISSUERS}
+
+			# can be left blank to allow any "aud" claim value
+			audience_whitelist {$AUTH_AUDIENCES}
+		}
+
+		upload @upload {
+			dest_dir uploads
+			file_field_name file
+			create_uuid_dir true
+			response_template response.json
+		}
+	}
+
+	handle {
+		respond 404
+	}
+}
